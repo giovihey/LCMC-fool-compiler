@@ -1,0 +1,7 @@
+print( 
+  if (5+3)*-7 == 9
+    then { 8 }
+    else { false }
+);
+
+
