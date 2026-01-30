@@ -1,0 +1,7 @@
+let
+    var a:bool = true;
+    var b:bool = true;
+    var c:bool = false;
+    var d:bool = false;
+in
+    print (a);
