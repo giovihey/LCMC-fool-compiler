@@ -1,0 +1,5 @@
+let
+    var a:int = 7;
+    var b:int = 5;
+in
+    print(a-b);

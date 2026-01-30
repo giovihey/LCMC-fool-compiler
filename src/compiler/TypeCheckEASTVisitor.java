@@ -115,20 +115,29 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
         return new IntTypeNode();
     }
 
-    @Override
-    public TypeNode visitNode(CallNode n) throws TypeException {
-        if (print) printNode(n, n.id);
-        TypeNode t = visit(n.entry);
-        if (!(t instanceof ArrowTypeNode))
-            throw new TypeException("Invocation of a non-function " + n.id, n.getLine());
-        ArrowTypeNode at = (ArrowTypeNode) t;
-        if (!(at.parlist.size() == n.arglist.size()))
-            throw new TypeException("Wrong number of parameters in the invocation of " + n.id, n.getLine());
-        for (int i = 0; i < n.arglist.size(); i++)
-            if (!(isSubtype(visit(n.arglist.get(i)), at.parlist.get(i))))
-                throw new TypeException("Wrong type for " + (i + 1) + "-th parameter in the invocation of " + n.id, n.getLine());
-        return at.ret;
-    }
+	@Override
+	public TypeNode visitNode(MinusNode n) throws TypeException {
+		if (print) printNode(n);
+		if ( !(isSubtype(visit(n.left), new IntTypeNode())
+				&& isSubtype(visit(n.right), new IntTypeNode())) )
+			throw new TypeException("Non integers in subtraction", n.getLine());
+		return new IntTypeNode();
+	}
+
+	@Override
+	public TypeNode visitNode(CallNode n) throws TypeException {
+		if (print) printNode(n,n.id);
+		TypeNode t = visit(n.entry); 
+		if ( !(t instanceof ArrowTypeNode) )
+			throw new TypeException("Invocation of a non-function "+n.id,n.getLine());
+		ArrowTypeNode at = (ArrowTypeNode) t;
+		if ( !(at.parlist.size() == n.arglist.size()) )
+			throw new TypeException("Wrong number of parameters in the invocation of "+n.id,n.getLine());
+		for (int i = 0; i < n.arglist.size(); i++)
+			if ( !(isSubtype(visit(n.arglist.get(i)),at.parlist.get(i))) )
+				throw new TypeException("Wrong type for "+(i+1)+"-th parameter in the invocation of "+n.id,n.getLine());
+		return at.ret;
+	}
 
     @Override
     public TypeNode visitNode(IdNode n) throws TypeException {
