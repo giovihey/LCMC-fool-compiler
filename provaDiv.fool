@@ -1,0 +1,10 @@
+let
+    var a:int = 20;
+    var b:int = 4;
+    var c:int = 15;
+    var d:int = 6;
+    var e:int = 7;
+    var f:int = 3;
+    var res:int = (a / b) + (c / d) + (e / f);
+in
+    print( res );
