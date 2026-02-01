@@ -239,4 +239,13 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
         return new BoolTypeNode();
 
     }
+
+    @Override
+    public TypeNode visitNode(NotNode n) throws TypeException {
+        if (print) printNode(n);
+        TypeNode r = visit(n.right);
+        if ( !( r instanceof BoolTypeNode ) )
+            throw new TypeException("Incompatible type for not",n.getLine());
+        return new BoolTypeNode();
+    }
 }

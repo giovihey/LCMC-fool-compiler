@@ -218,4 +218,12 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
         }
         return n;
     }
+
+	@Override
+	public Node visitNot(NotContext c) {
+		if (print) printVarAndProdName(c);
+		Node n = new NotNode(visit(c.exp()));
+		n.setLine(c.NOT().getSymbol().getLine());
+		return n;
+	}
 }

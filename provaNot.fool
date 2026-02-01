@@ -1,0 +1,7 @@
+let
+    var x:bool = true;
+    var y:bool = false;
+    var z:bool = !x;
+    var w:bool = !y;
+in
+    print( z );
