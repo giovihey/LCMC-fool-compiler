@@ -3,10 +3,14 @@ package compiler;
 import compiler.AST.*;
 import compiler.lib.*;
 import compiler.exc.*;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import static compiler.lib.FOOLlib.*;
 
 public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidException> {
-
+    List<List<String>> dispatchTables = new ArrayList<>();
   CodeGenerationASTVisitor() {}
   CodeGenerationASTVisitor(boolean debug) {super(false,debug);} //enables print for debugging
 
@@ -286,4 +290,57 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 				l2 + ":"
 		);
 	}
+
+    // OOP
+
+    /**
+     * Method to visit and generate assembly code for a class node. Prepare a list of strings for the
+     * dispatch table. If the current class extends another class, get the dispatch table of the super class.
+     * Then, for each method of the class, get its label and offset. If the offset is already present, override
+     * the parent's offset. Save the new obtained dispatch table to the global one. Finally, for each label, create
+     * the assembly code.
+     * */
+    @Override
+    public String visitNode(ClassNode n) {
+      if (print) printNode(n);
+
+      List<String> dispatchTable = new ArrayList<String>();
+
+      // If super class is present, get dispatch table of super class
+        if (n.superId != null && n.superEntry != null) {
+            int superPos = -n.superEntry.offset - 2;
+            if (superPos >= 0 && superPos < dispatchTables.size()) {
+                dispatchTable = new ArrayList<>(dispatchTables.get(superPos));
+            }
+        }
+
+        // add methods to dispatch table
+        for (MethodNode method : n.methods) {
+            visit(method);
+            if (method.offset < dispatchTable.size()) {
+                dispatchTable.set(method.offset, method.label);
+            } else {
+                while(dispatchTable.size() <= method.offset) {
+                    dispatchTable.add(null);
+                }
+                dispatchTable.set(method.offset, method.label);
+            }
+        }
+
+        dispatchTables.add(dispatchTable);
+
+        String code = "";
+        for (String label : dispatchTable) {
+            code = nlJoin(code,
+                    "push" + label,
+                    "lhp",
+                    "sw",
+                    "lhp",
+                    "push 1",
+                    "add",
+                    "shp");
+        }
+        return nlJoin("lhp", code );
+    }
+
 }

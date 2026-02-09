@@ -248,4 +248,39 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
             throw new TypeException("Incompatible type for not",n.getLine());
         return new BoolTypeNode();
     }
+
+    // OOP
+
+    @Override
+    public TypeNode visitNode(ClassNode n) throws TypeException {
+        if (print) printNode(n);
+
+//        TODO: Extension
+//        if (n.superId != null) {
+//            addClassTyperReference(n.id, n.superId);
+//        }
+
+        for (MethodNode m : n.methods) {
+            visit(m);
+        }
+
+        // TODO: Extension
+//        if (n.superEntry != null) {
+//            ClassTypeNode classTypeNode = (ClassTypeNode) n.getType();
+//            ClassTypeNode superClassTypeNode = (ClassTypeNode) n.superEntry.type;
+//            // typechecking optimization
+//            for (FieldNode field : n.fields) {
+//                int fieldPos = -field.offset - 1;
+//                if (fieldPos < superClassTypeNode.fields.size() && !isSubtype(classTypeNode.fields.get(fieldPos), superClassTypeNode.fields.get(fieldPos))) {
+//                    throw new TypeException("field is not subtype in line: ", n.getLine());
+//                }
+//            }
+//            for (MethodNode method : n.methods) {
+//                if (method.offset < superClassTypeNode.methods.size() && !isSubtype(classTypeNode.methods.get(method.offset), superClassTypeNode.methods.get(method.offset))) {
+//                    throw new TypeException("method is not subtype in line: ", n.getLine());
+//                }
+//            }
+//        }
+        return null;
+    }
 }

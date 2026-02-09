@@ -1,5 +1,6 @@
 package compiler;
 
+import java.lang.reflect.Field;
 import java.util.*;
 import compiler.AST.*;
 import compiler.exc.*;
@@ -8,6 +9,7 @@ import compiler.lib.*;
 public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 	
 	private List<Map<String, STentry>> symTable = new ArrayList<>();
+    private final Map<String, Map<String, STentry>> classTable = new HashMap<>();
 	private int nestingLevel=0; // current nesting level
 	private int decOffset=-2; // counter for offset of local declarations at current nesting level 
 	int stErrors=0;
@@ -223,4 +225,93 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 		visit(n.right);
 		return null;
 	}
+
+    // OOP
+
+    @Override
+    public Void visitNode(ClassNode n) {
+        if (print) printNode(n);
+
+        Set<String> fieldsAndMethods = new HashSet<>(); //Optimization 1
+        Map<String, STentry> globalSymbolTable = symTable.getFirst();
+        List<TypeNode> fieldTypeList = new ArrayList<>();
+        List<ArrowTypeNode> methodTypeList = new ArrayList<>();
+
+        // Extension: Get all the methods and the fields of the superclass, and add them to the current class
+        if (n.superId != null) {
+            STentry superClassEntry = globalSymbolTable.get(n.superId);
+            n.superEntry = superClassEntry;
+            ClassTypeNode superClassType = (ClassTypeNode) superClassEntry.type;
+            fieldTypeList.addAll(superClassType.fields);
+            methodTypeList.addAll(superClassType.methods);
+        }
+
+        STentry entry = new STentry(0, new ClassTypeNode(fieldTypeList, methodTypeList), decOffset--);
+        n.setType(entry.type);
+
+        // If the name of the current class has already been declared, return an "already declared" error
+        if (globalSymbolTable.put(n.id, entry) != null) {
+            System.out.println("Class id " + n.id + " at line "+ n.getLine() +" already declared");
+            stErrors++;
+        }
+
+        // Handle virtual table. Create a new empty virtual table. If the class extends a superclass, add
+        // all the content of that superclass to the table. Then add the new virtual table to the global symbol table
+        // and to the global classTable
+        nestingLevel++;
+        Map<String, STentry> virtualTable = new HashMap<>();
+        if (n.superId != null) {
+            virtualTable.putAll(classTable.get(n.superId));
+        }
+        symTable.add(virtualTable);
+        classTable.put(n.id, virtualTable);
+
+        // Handle fields
+        virtualTable = symTable.get(nestingLevel);
+        int fieldOffset = -fieldTypeList.size() - 1;
+
+        for (FieldNode field : n.fields) {
+            if (print) printNode(field);
+
+            if (fieldsAndMethods.contains(field.id)) {
+                System.out.println("Field or Method " + field.id + " at line " + field.getLine() + " already declared ");
+                stErrors++;
+            } else {
+                STentry superEntry = virtualTable.get(field.id);
+                STentry fieldEntry;
+
+                if (superEntry == null) {
+                    fieldEntry = new STentry(nestingLevel, field.getType(), fieldOffset--);
+                } else {
+                    if (superEntry.type instanceof ArrowTypeNode) {
+                        System.out.println("Can't ovverride method with field, line: " + field.getLine());
+                        stErrors++;
+                    }
+                    fieldEntry = new STentry(nestingLevel, field.getType(), superEntry.offset);
+                }
+                fieldsAndMethods.add(field.id);
+                field.offset = fieldEntry.offset;
+                virtualTable.put(field.id, fieldEntry);
+                fieldTypeList.add(-fieldEntry.offset - 1,field.getType());
+            }
+        }
+        int prevNLDecOffset = decOffset;
+        decOffset = methodTypeList.size();
+
+        // methods management TODO
+//        for (MethodNode method : n.methods) {
+//            if (fieldsAndMethods.contains(method.id)) {
+//                System.out.println("Method: " + method.id + " at line " + method.getLine() + " already declared");
+//                stErrors++;
+//            } else {
+//                fieldsAndMethods.add(method.id);
+//                visit(method);
+//                methodTypeList.add(method.offset, (ArrowTypeNode) method.getType());
+//            }
+//        }
+        symTable.remove(nestingLevel--);
+        decOffset = prevNLDecOffset;
+        return null;
+
+    }
 }

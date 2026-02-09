@@ -240,4 +240,40 @@ public class AST {
 		@Override
 		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
 	}
+
+    // OOP
+    public static class ClassNode extends DecNode {
+        final String id;
+        final String superId;
+        final List<FieldNode> fields;
+        final List<MethodNode> methods;
+        STentry superEntry;
+
+        public void setType(TypeNode t) {
+            this.type = t;
+        }
+
+        public ClassNode(String id, String superId, List<FieldNode> fields, List<MethodNode> methods) {
+            this.id = id;
+            this.superId = superId;
+            this.fields = fields;
+            this.methods = methods;
+        }
+
+        @Override
+        public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
+    }
+
+    public static class FieldNode extends DecNode {
+        final String id;
+        int offset;
+
+        public FieldNode(String id, int offset) {
+            this.id = id;
+            this.offset = offset;
+        }
+
+        @Override
+        public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
+    }
 }

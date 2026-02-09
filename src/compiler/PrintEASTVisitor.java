@@ -4,6 +4,8 @@ import compiler.AST.*;
 import compiler.lib.*;
 import compiler.exc.*;
 
+import java.lang.reflect.Field;
+
 public class PrintEASTVisitor extends BaseEASTVisitor<Void,VoidException> {
 
 	PrintEASTVisitor() { super(false,true); } 
@@ -195,5 +197,29 @@ public class PrintEASTVisitor extends BaseEASTVisitor<Void,VoidException> {
 		visit(n.right);
 		return null;
 	}
+
+    // OOP
+
+    @Override
+    public Void visitNode(ClassNode n) {
+        printNode(n, n.id);
+
+        for (int i = 0; i < n.fields.size(); i++) {
+            visit(n.fields.get(i));
+        }
+
+        for (int i = 0; i < n.methods.size(); i++) {
+            visit(n.methods.get(i));
+        }
+
+        return null;
+    }
+
+    @Override
+    public Void visitNode(FieldNode n) {
+        printNode(n, n.id);
+        visit(n.getType());
+        return null;
+    }
 
 }
