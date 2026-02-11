@@ -287,18 +287,26 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
                 STentry fieldEntry;
 
                 if (superEntry == null) {
+                    // New field - create new entry
                     fieldEntry = new STentry(nestingLevel, field.getType(), fieldOffset--);
+                    fieldsAndMethods.add(field.id);
+                    field.offset = fieldEntry.offset;
+                    virtualTable.put(field.id, fieldEntry);
+                    fieldTypeList.add(-fieldEntry.offset - 1, field.getType());
                 } else {
                     if (superEntry.type instanceof ArrowTypeNode) {
-                        System.out.println("Can't ovverride method with field, line: " + field.getLine());
+                        System.out.println("Can't override method with field, line: " + field.getLine());
                         stErrors++;
+                    } else {
+                        // Override existing field - REPLACE instead of ADD
+                        fieldEntry = new STentry(nestingLevel, field.getType(), superEntry.offset);
+                        fieldsAndMethods.add(field.id);
+                        field.offset = fieldEntry.offset;
+                        virtualTable.put(field.id, fieldEntry);
+                        // REPLACE the field at the same position
+                        fieldTypeList.set(-fieldEntry.offset - 1, field.getType());
                     }
-                    fieldEntry = new STentry(nestingLevel, field.getType(), superEntry.offset);
                 }
-                fieldsAndMethods.add(field.id);
-                field.offset = fieldEntry.offset;
-                virtualTable.put(field.id, fieldEntry);
-                fieldTypeList.add(-fieldEntry.offset - 1,field.getType());
             }
         }
 
