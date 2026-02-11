@@ -1,4 +1,4 @@
-# FOOL Compiler - Bug Fixes Documentation
+# 1  FOOL Compiler - Bug Fixes Documentation
 
 ## Overview
 This document details all the bugs that were identified and fixed in the FOOL compiler implementation. The compiler now successfully compiles and executes object-oriented programs with classes, methods, and inheritance.
