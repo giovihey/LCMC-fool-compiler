@@ -301,4 +301,23 @@ public class AST {
         @Override
         public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
     }
+
+    public static class ClassCallNode extends Node {
+        final String classId;
+        final String methodId;
+        final List<Node> argList;
+        int nestingLevel;
+        STentry entry;
+        STentry methodEntry;
+
+
+        public ClassCallNode(String classId, String methodId, List<Node> argList) {
+            this.classId = classId;
+            this.methodId = methodId;
+            this.argList = Collections.unmodifiableList(argList);
+        }
+
+        @Override
+        public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
+    }
 }

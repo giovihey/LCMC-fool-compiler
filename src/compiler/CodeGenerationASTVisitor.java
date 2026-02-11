@@ -382,4 +382,41 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
         return null;
     }
 
+    @Override
+    public String visitNode(ClassCallNode n) {
+        if (print) printNode(n, n.classId);
+
+        if (n.methodEntry == null) {
+            System.err.println("Errore: methodEntry non definito per il metodo " + n.methodId);
+            return "push -1"; // return error
+        }
+
+        // Parameter code generation
+        String argCode = null, getAR = null;
+        for (int i = n.argList.size() - 1; i >= 0; i--) {
+            argCode = nlJoin(argCode, visit(n.argList.get(i)));
+        }
+
+        for (int i = 0; i < n.nestingLevel - n.entry.nl; i++) {
+            getAR = nlJoin(getAR, "lw");
+        }
+
+        return nlJoin(
+                "lfp",
+                argCode,
+                "lfp", getAR,
+                "push " + n.entry.offset,
+                "add",
+                "lw",
+                "stm",
+                "ltm",
+                "ltm",
+                "lw",
+                "push " + n.methodEntry.offset,
+                "add",
+                "lw",
+                "js"
+        );
+    }
+
 }

@@ -358,4 +358,34 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
         decOffset = prevDecOffset;
         return null;
     }
+
+    @Override
+    public Void visitNode(ClassCallNode n) {
+        if (print) printNode(n);
+        STentry entry = stLookup(n.classId);
+        if (entry == null) {
+            System.out.println(n.classId + " at line: " + n.getLine() + " not declared");
+            stErrors++;
+        } else {
+            if (!(entry.type instanceof RefTypeNode)) {
+                System.out.println(n.classId + " at line: " + n.getLine() + " is not a RefTypeNode");
+                stErrors++;
+            }
+            n.entry = entry;
+            n.nestingLevel = nestingLevel;
+
+            RefTypeNode classRef = (RefTypeNode) entry.type;
+            STentry methodEntry = classTable.get(classRef.classId).get(n.methodId);
+            if (methodEntry == null) {
+                System.out.println("Method: " + n.methodId + " at line: " + n.getLine() + ", was not declared");
+                stErrors++;
+            } else {
+                n.methodEntry = methodEntry;
+            }
+        }
+        for (Node arg : n.argList) {
+            visit(arg);
+        }
+        return null;
+    }
 }
