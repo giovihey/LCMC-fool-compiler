@@ -295,10 +295,11 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
                 fieldTypeList.add(-fieldEntry.offset - 1,field.getType());
             }
         }
+
+        // methods management
         int prevNLDecOffset = decOffset;
         decOffset = methodTypeList.size();
 
-        // methods management
         for (MethodNode method : n.methods) {
             if (fieldsAndMethods.contains(method.id)) {
                 System.out.println("Method: " + method.id + " at line " + method.getLine() + " already declared");
@@ -323,9 +324,13 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
         for (ParNode par : n.parameterList) {
             parameterTypeList.add(par.getType());
         }
+
+        // Controlla se c'è override
         STentry superEntry = virtualTable.get(n.id);
         STentry methodEntry;
+
         if (superEntry == null) {
+            // Nuovo metodo
             methodEntry = new STentry(nestingLevel, new ArrowTypeNode(parameterTypeList, n.returnType), decOffset++);
         } else {
             if (!(superEntry.type instanceof ArrowTypeNode)) {
@@ -333,16 +338,22 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
                 stErrors++;
 
             }
+            // Override: riusa offset della superclasse
             methodEntry = new STentry(nestingLevel, superEntry.type, superEntry.offset);
         }
+
+        // Salva informazioni nel nodo
         n.offset = methodEntry.offset;
         n.setType(methodEntry.type);
         virtualTable.put(n.id, methodEntry);
+
+        // Apre scope per il corpo del metodo
         nestingLevel++;
         Map<String, STentry> methodScope = new HashMap<>();
         symTable.add(methodScope);
         int prevDecOffset = decOffset;
         decOffset = -2;
+
         int parametersOffset = 1;
         for (ParNode param : n.parameterList) {
             if (methodScope.put(param.id, new STentry(nestingLevel, param.getType(), parametersOffset++)) != null) {
