@@ -1,0 +1,9 @@
+let
+
+  class A(n:int) {
+    fun get:int() n;
+  }
+  
+  var obj:A = new A(666);
+in
+  print(obj.get()); 

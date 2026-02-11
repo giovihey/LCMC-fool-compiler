@@ -3,6 +3,7 @@ package compiler;
 import compiler.AST.*;
 import compiler.lib.*;
 import compiler.exc.*;
+import svm.ExecuteVM;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -300,48 +301,48 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
      * the parent's offset. Save the new obtained dispatch table to the global one. Finally, for each label, create
      * the assembly code.
      * */
-    @Override
-    public String visitNode(ClassNode n) {
-      if (print) printNode(n);
+	@Override
+	public String visitNode(ClassNode n) {
+		if (print) printNode(n);
 
-      List<String> dispatchTable = new ArrayList<String>();
+		List<String> dispatchTable = new ArrayList<String>();
 
-      // If super class is present, get dispatch table of super class
-        if (n.superId != null && n.superEntry != null) {
-            int superPos = -n.superEntry.offset - 2;
-            if (superPos >= 0 && superPos < dispatchTables.size()) {
-                dispatchTable = new ArrayList<>(dispatchTables.get(superPos));
-            }
-        }
+		// If super class is present, get dispatch table of super class
+		if (n.superId != null && n.superEntry != null) {
+			int superPos = -n.superEntry.offset - 2;
+			if (superPos >= 0 && superPos < dispatchTables.size()) {
+				dispatchTable = new ArrayList<>(dispatchTables.get(superPos));
+			}
+		}
 
-        // add methods to dispatch table
-        for (MethodNode method : n.methods) {
-            visit(method);
-            if (method.offset < dispatchTable.size()) {
-                dispatchTable.set(method.offset, method.label);
-            } else {
-                while(dispatchTable.size() <= method.offset) {
-                    dispatchTable.add(null);
-                }
-                dispatchTable.set(method.offset, method.label);
-            }
-        }
+		// add methods to dispatch table
+		for (MethodNode method : n.methods) {
+			visit(method);
+			if (method.offset < dispatchTable.size()) {
+				dispatchTable.set(method.offset, method.label);
+			} else {
+				while(dispatchTable.size() <= method.offset) {
+					dispatchTable.add(null);
+				}
+				dispatchTable.set(method.offset, method.label);
+			}
+		}
 
-        dispatchTables.add(dispatchTable);
+		dispatchTables.add(dispatchTable);
 
-        String code = "";
-        for (String label : dispatchTable) {
-            code = nlJoin(code,
-                    "push" + label,
-                    "lhp",
-                    "sw",
-                    "lhp",
-                    "push 1",
-                    "add",
-                    "shp");
-        }
-        return nlJoin("lhp", code );
-    }
+		String code = "";
+		for (String label : dispatchTable) {
+			code = nlJoin(code,
+					"push " + label,  // ← AGGIUNTO LO SPAZIO QUI
+					"lhp",
+					"sw",
+					"lhp",
+					"push 1",
+					"add",
+					"shp");
+		}
+		return nlJoin("lhp", code );
+	}
 
     @Override
     public String visitNode(MethodNode n) {
@@ -419,4 +420,38 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
         );
     }
 
+	@Override
+	public String visitNode(NewNode n) {
+		if (print) printNode(n, n.classId);
+		String argCode = null, heapCode = null;
+		for (Node param : n.argList) {
+			argCode = nlJoin(argCode, visit(param));
+			heapCode = nlJoin(heapCode,
+					"lhp",
+					"sw",
+					"lhp",
+					"push 1",
+					"add",
+					"shp"
+			);
+		}
+		return nlJoin(
+				argCode,
+				heapCode,
+				"push " + (ExecuteVM.MEMSIZE + n.entry.offset),
+				"lw",
+				"lhp",
+				"sw",
+				"lhp",
+				"lhp",
+				"push 1",
+				"add",
+				"shp"
+		);
+	}
+	@Override
+	public String visitNode(EmptyNode n) {
+		if (print) printNode(n);
+		return "push -1";
+	}
 }

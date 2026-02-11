@@ -27,6 +27,11 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 
 	@Override
 	public Void visitNode(ProgLetInNode n) {
+        // DEBUG: stampa cosa c'è nella declist
+        System.out.println("DEBUG: declist size = " + n.declist.size());
+        for (Node dec : n.declist) {
+            System.out.println("DEBUG: declist contains: " + dec.getClass().getSimpleName());
+        }
 		if (print) printNode(n);
 		Map<String, STentry> hm = new HashMap<>();
 		symTable.add(hm);
@@ -230,10 +235,11 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 
     @Override
     public Void visitNode(ClassNode n) {
+        System.out.println("DEBUG: Visiting ClassNode with id: " + n.id);
         if (print) printNode(n);
 
         Set<String> fieldsAndMethods = new HashSet<>(); //Optimization 1
-        Map<String, STentry> globalSymbolTable = symTable.getFirst();
+        Map<String, STentry> globalSymbolTable = symTable.get(0);
         List<TypeNode> fieldTypeList = new ArrayList<>();
         List<ArrowTypeNode> methodTypeList = new ArrayList<>();
 
@@ -377,26 +383,57 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
         if (entry == null) {
             System.out.println(n.classId + " at line: " + n.getLine() + " not declared");
             stErrors++;
+        } else if (!(entry.type instanceof RefTypeNode)) {
+            System.out.println(n.classId + " at line: " + n.getLine() + " is not a RefTypeNode");
+            stErrors++;
         } else {
-            if (!(entry.type instanceof RefTypeNode)) {
-                System.out.println(n.classId + " at line: " + n.getLine() + " is not a RefTypeNode");
-                stErrors++;
-            }
             n.entry = entry;
             n.nestingLevel = nestingLevel;
 
             RefTypeNode classRef = (RefTypeNode) entry.type;
-            STentry methodEntry = classTable.get(classRef.classId).get(n.methodId);
-            if (methodEntry == null) {
-                System.out.println("Method: " + n.methodId + " at line: " + n.getLine() + ", was not declared");
+            Map<String, STentry> classVirtualTable = classTable.get(classRef.classId);  // SALVATO IN VARIABILE
+
+            if (classVirtualTable == null) {  // AGGIUNTO CONTROLLO
+                System.out.println("Class " + classRef.classId + " at line: " + n.getLine() + " not found in class table");
                 stErrors++;
             } else {
-                n.methodEntry = methodEntry;
+                STentry methodEntry = classVirtualTable.get(n.methodId);
+                if (methodEntry == null) {
+                    System.out.println("Method: " + n.methodId + " at line: " + n.getLine() + ", was not declared");
+                    stErrors++;
+                } else {
+                    n.methodEntry = methodEntry;
+                }
             }
         }
         for (Node arg : n.argList) {
             visit(arg);
         }
+        return null;
+    }
+    @Override
+    public Void visitNode(NewNode n) {
+        if (print) printNode(n);
+
+        STentry classEntry = symTable.get(0).get(n.classId);
+
+        if (classEntry == null) {
+            System.out.println("Class " + n.classId + " at line: " + n.getLine() + " was not declared");
+            stErrors++;
+            // Crea un entry fittizio con ClassTypeNode vuoto per evitare crash nei visitor successivi
+            n.entry = new STentry(0, new ClassTypeNode(new ArrayList<>(), new ArrayList<>()), 0);
+        } else {
+            n.entry = classEntry;
+        }
+
+        for (Node arg : n.argList) {
+            visit(arg);
+        }
+        return null;
+    }
+    @Override
+    public Void visitNode(EmptyNode n){
+        if (print) printNode(n);
         return null;
     }
 }

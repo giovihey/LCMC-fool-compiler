@@ -256,31 +256,31 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
         if (print) printNode(n);
 
 //        TODO: Extension
-//        if (n.superId != null) {
-//            addClassTyperReference(n.id, n.superId);
-//        }
+        if (n.superId != null) {
+            addClassTypeReference(n.id, n.superId);
+        }
 
         for (MethodNode m : n.methods) {
             visit(m);
         }
 
         // TODO: Extension
-//        if (n.superEntry != null) {
-//            ClassTypeNode classTypeNode = (ClassTypeNode) n.getType();
-//            ClassTypeNode superClassTypeNode = (ClassTypeNode) n.superEntry.type;
-//            // typechecking optimization
-//            for (FieldNode field : n.fields) {
-//                int fieldPos = -field.offset - 1;
-//                if (fieldPos < superClassTypeNode.fields.size() && !isSubtype(classTypeNode.fields.get(fieldPos), superClassTypeNode.fields.get(fieldPos))) {
-//                    throw new TypeException("field is not subtype in line: ", n.getLine());
-//                }
-//            }
-//            for (MethodNode method : n.methods) {
-//                if (method.offset < superClassTypeNode.methods.size() && !isSubtype(classTypeNode.methods.get(method.offset), superClassTypeNode.methods.get(method.offset))) {
-//                    throw new TypeException("method is not subtype in line: ", n.getLine());
-//                }
-//            }
-//        }
+        if (n.superEntry != null) {
+            ClassTypeNode classTypeNode = (ClassTypeNode) n.getType();
+            ClassTypeNode superClassTypeNode = (ClassTypeNode) n.superEntry.type;
+            // typechecking optimization
+            for (FieldNode field : n.fields) {
+                int fieldPos = -field.offset - 1;
+                if (fieldPos < superClassTypeNode.fields.size() && !isSubtype(classTypeNode.fields.get(fieldPos), superClassTypeNode.fields.get(fieldPos))) {
+                    throw new TypeException("field is not subtype in line: ", n.getLine());
+                }
+            }
+            for (MethodNode method : n.methods) {
+                if (method.offset < superClassTypeNode.methods.size() && !isSubtype(classTypeNode.methods.get(method.offset), superClassTypeNode.methods.get(method.offset))) {
+                    throw new TypeException("method is not subtype in line: ", n.getLine());
+                }
+            }
+        }
         return null;
     }
 
@@ -313,5 +313,53 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
             if ( !(isSubtype(visit(n.argList.get(i)),at.parlist.get(i))) )
                 throw new TypeException("Wrong type for " + (i + 1 )+"-th parameter in the invocation of " + n.classId + "." + n.methodId, n.getLine());
         return at.ret;
+    }
+
+    @Override
+    public TypeNode visitNode(NewNode n) throws TypeException {
+        if (print) printNode(n, n.classId);
+
+        ClassTypeNode classType = (ClassTypeNode) n.entry.type;
+
+        // Controlla se il numero di argomenti corrisponde al numero di fields
+        if (classType.fields.size() != n.argList.size()) {
+            throw new TypeException("Wrong number of arguments for class " + n.classId +
+                    " (expected " + classType.fields.size() + ", got " + n.argList.size() + ")",
+                    n.getLine());
+        }
+
+        // Type check di ogni argomento
+        for (int i = 0; i < n.argList.size(); i++) {
+            TypeNode fieldType = classType.fields.get(i);
+            TypeNode passedField = visit(n.argList.get(i));
+            if (!isSubtype(passedField, fieldType)) {
+                throw new TypeException("Wrong field type in class " + n.classId + " at line: ", n.getLine());
+            }
+        }
+        return new RefTypeNode(n.classId);
+    }
+
+    @Override
+    public TypeNode visitNode(EmptyNode n) throws TypeException {
+        if (print) printNode(n);
+        return new EmptyTypeNode();
+    }
+
+    @Override
+    public TypeNode visitNode(ClassTypeNode n) throws TypeException {
+        if (print) printNode(n);
+        return null;
+    }
+
+    @Override
+    public TypeNode visitNode(RefTypeNode n) throws TypeException {
+        if (print) printNode(n, n.classId);
+        return null;
+    }
+
+    @Override
+    public TypeNode visitNode(EmptyTypeNode n) throws TypeException {
+        if (print) printNode(n);
+        return null;
     }
 }

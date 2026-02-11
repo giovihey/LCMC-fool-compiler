@@ -320,4 +320,53 @@ public class AST {
         @Override
         public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
     }
+
+	public static class NewNode extends Node {
+		final String classId;
+		final List<Node> argList;
+		STentry entry;
+
+		public NewNode(String classId, List<Node> argList) {
+			this.classId = classId;
+			this.argList = Collections.unmodifiableList(argList);
+		}
+
+		@Override
+		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
+	}
+	public static class EmptyNode extends Node {
+		@Override
+		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
+	}
+
+	// types
+
+	public static class ClassTypeNode extends TypeNode {
+		final List<TypeNode> fields;
+		final List<ArrowTypeNode> methods;
+
+		public ClassTypeNode(List<TypeNode> fields, List<ArrowTypeNode> methods) {
+			this.fields = fields;
+			this.methods = methods;
+		}
+
+		@Override
+		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
+	}
+
+	public static class RefTypeNode extends TypeNode {
+		final String classId;
+
+		public RefTypeNode(String classId) {
+			this.classId = classId;
+		}
+
+		@Override
+		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
+	}
+
+	public static class EmptyTypeNode extends TypeNode {
+		@Override
+		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
+	}
 }
