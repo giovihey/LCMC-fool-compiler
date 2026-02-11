@@ -268,9 +268,34 @@ public class AST {
         final String id;
         int offset;
 
-        public FieldNode(String id, int offset) {
+        public FieldNode(String id, TypeNode type) {
             this.id = id;
-            this.offset = offset;
+            this.type = type;
+        }
+
+        @Override
+        public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
+    }
+
+    public static class MethodNode extends DecNode {
+        final String id;
+        final TypeNode returnType;
+        final List<ParNode> parameterList;
+        final List<DecNode> declarationList;
+        final Node exp;
+        String label;
+        int offset;
+
+        void setType(TypeNode t) {
+            this.type = t;
+        }
+
+        public MethodNode(String id, TypeNode returnType, List<ParNode> parameterList, List<DecNode> declarationList, Node exp) {
+            this.id = id;
+            this.returnType = returnType;
+            this.parameterList = parameterList;
+            this.declarationList = declarationList;
+            this.exp = exp;
         }
 
         @Override

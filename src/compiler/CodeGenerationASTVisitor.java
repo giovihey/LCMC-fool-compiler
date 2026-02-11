@@ -343,4 +343,43 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
         return nlJoin("lhp", code );
     }
 
+    @Override
+    public String visitNode(MethodNode n) {
+        if (print) printNode(n, n.id);
+        String declCode = null, popDecl = null, popParl = null;
+        for (Node dec : n.declarationList) {
+            declCode = nlJoin(declCode, visit(dec));
+            popDecl = nlJoin(popDecl, "pop");
+        }
+
+        // remove parameters from stack
+        for (int i = 0; i < n.parameterList.size(); i++) {
+            popParl = nlJoin(popParl, "pop");
+        }
+
+        String funl = freshFunLabel();
+        n.label = funl;
+
+        putCode(
+                nlJoin(
+                        funl + ":",
+                        "cfp",          // set $fp to $sp value
+                        "lra",          // load $ra value
+                        declCode,       // generate code for local declarations (they use the new $fp)
+                        visit(n.exp),   // generate code for function body expression
+                        "stm",          // set $tm to popped value (function result)
+                        popDecl,        // remove local declarations from stack
+                        "sra",          // set $ra to popped value
+                        "pop",          // remove Access Link from stack
+                        popParl,        // remove parameters from stack
+                        "sfp",          // set $fp to popped value (Control Link)
+                        "ltm",          // load $tm value (function result)
+                        "lra",          // load $ra value
+                        "js"            // jump to popped address
+                )
+        );
+
+        return null;
+    }
+
 }

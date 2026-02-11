@@ -226,4 +226,51 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 		n.setLine(c.NOT().getSymbol().getLine());
 		return n;
 	}
+
+    // OOP
+    @Override
+    public Node visitCldec(CldecContext c) {
+        if (print) printVarAndProdName(c);
+        final List<MethodNode> methods = new ArrayList<>();
+        final List<FieldNode> fields = new ArrayList<>();
+        String superID = null;
+        int startID = 1;
+        if (c.EXTENDS() != null) {
+            superID = c.ID(1).getText();
+            startID = 2;
+        }
+        for (int i = startID; i < c.ID().size(); i++) {
+            FieldNode field = new FieldNode(c.ID(i).getText(), (TypeNode) visit(c.type(i - startID)));
+            field.setLine(c.ID(i).getSymbol().getLine());
+            fields.add(field);
+        }
+        for (MethdecContext met : c.methdec()) {
+            methods.add((MethodNode) visit(met));
+        }
+        Node n = null;
+        if (!c.ID().isEmpty()) {
+            n = new ClassNode(c.ID(0).getText(), superID, fields, methods);
+            n.setLine(c.CLASS().getSymbol().getLine());
+        }
+        return n;
+    }
+
+    @Override
+    public MethodNode visitMethdec(MethdecContext c) {
+        if (print) printVarAndProdName(c);
+        List<ParNode> parameterList = new ArrayList<>();
+        for (int i = 1; i < c.ID().size(); i++) {
+            ParNode p = new ParNode(c.ID(i).getText(), (TypeNode) visit(c.type(i)));
+            p.setLine(c.ID(i).getSymbol().getLine());
+            parameterList.add(p);
+        }
+        List<DecNode> declarationList = new ArrayList<>();
+        for (DecContext dec : c.dec()) declarationList.add((DecNode) visit(dec));
+        MethodNode n = null;
+        if (!c.ID().isEmpty()) {
+            n = new MethodNode( c.ID(0).getText(), (TypeNode) visit( c.type(0) ), parameterList, declarationList, visit( c.exp() ) );
+            n.setLine(c.FUN().getSymbol().getLine());
+        }
+        return n;
+    }
 }

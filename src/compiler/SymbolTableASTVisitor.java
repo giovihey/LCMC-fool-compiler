@@ -298,20 +298,64 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
         int prevNLDecOffset = decOffset;
         decOffset = methodTypeList.size();
 
-        // methods management TODO
-//        for (MethodNode method : n.methods) {
-//            if (fieldsAndMethods.contains(method.id)) {
-//                System.out.println("Method: " + method.id + " at line " + method.getLine() + " already declared");
-//                stErrors++;
-//            } else {
-//                fieldsAndMethods.add(method.id);
-//                visit(method);
-//                methodTypeList.add(method.offset, (ArrowTypeNode) method.getType());
-//            }
-//        }
+        // methods management
+        for (MethodNode method : n.methods) {
+            if (fieldsAndMethods.contains(method.id)) {
+                System.out.println("Method: " + method.id + " at line " + method.getLine() + " already declared");
+                stErrors++;
+            } else {
+                fieldsAndMethods.add(method.id);
+                visit(method);
+                methodTypeList.add(method.offset, (ArrowTypeNode) method.getType());
+            }
+        }
         symTable.remove(nestingLevel--);
         decOffset = prevNLDecOffset;
         return null;
 
+    }
+
+    @Override
+    public Void visitNode(MethodNode n) {
+        if (print) printNode(n);
+        Map<String, STentry> virtualTable = symTable.get(nestingLevel);
+        List<TypeNode> parameterTypeList = new ArrayList<>();
+        for (ParNode par : n.parameterList) {
+            parameterTypeList.add(par.getType());
+        }
+        STentry superEntry = virtualTable.get(n.id);
+        STentry methodEntry;
+        if (superEntry == null) {
+            methodEntry = new STentry(nestingLevel, new ArrowTypeNode(parameterTypeList, n.returnType), decOffset++);
+        } else {
+            if (!(superEntry.type instanceof ArrowTypeNode)) {
+                System.out.println("Cannot override field " + n.id + " at line " + n.getLine() + " with method " + n.id);
+                stErrors++;
+
+            }
+            methodEntry = new STentry(nestingLevel, superEntry.type, superEntry.offset);
+        }
+        n.offset = methodEntry.offset;
+        n.setType(methodEntry.type);
+        virtualTable.put(n.id, methodEntry);
+        nestingLevel++;
+        Map<String, STentry> methodScope = new HashMap<>();
+        symTable.add(methodScope);
+        int prevDecOffset = decOffset;
+        decOffset = -2;
+        int parametersOffset = 1;
+        for (ParNode param : n.parameterList) {
+            if (methodScope.put(param.id, new STentry(nestingLevel, param.getType(), parametersOffset++)) != null) {
+                System.out.println("Parameter: " + param.id + " at line " + n.getLine() + " was already declared");
+                stErrors++;
+            }
+        }
+        for (Node dec : n.declarationList) {
+            visit(dec);
+        }
+        visit(n.exp);
+        symTable.remove(nestingLevel--);
+        decOffset = prevDecOffset;
+        return null;
     }
 }
