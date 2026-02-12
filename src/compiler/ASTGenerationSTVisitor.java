@@ -301,6 +301,14 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
         return n;
     }
 
+    @Override
+    public Node visitNull(NullContext c) {
+        if (print) printVarAndProdName(c);
+        EmptyNode empty = new EmptyNode();
+        empty.setLine(c.NULL().getSymbol().getLine());
+        return empty;
+    }
+
 	@Override
 	public Node visitNew(NewContext c) {
 		if (print) printVarAndProdName(c);

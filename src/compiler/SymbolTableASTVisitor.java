@@ -238,32 +238,30 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
         System.out.println("DEBUG: Visiting ClassNode with id: " + n.id);
         if (print) printNode(n);
 
-        Set<String> fieldsAndMethods = new HashSet<>(); //Optimization 1
-        Map<String, STentry> globalSymbolTable = symTable.get(0);
+
+        Set<String> fieldsAndMethods = new HashSet<>(); // optimization 1
+        Map<String, STentry> globalSymTable = symTable.get(0);
         List<TypeNode> fieldTypeList = new ArrayList<>();
         List<ArrowTypeNode> methodTypeList = new ArrayList<>();
 
-        // Extension: Get all the methods and the fields of the superclass, and add them to the current class
+        // superclass management
         if (n.superId != null) {
-            STentry superClassEntry = globalSymbolTable.get(n.superId);
+            STentry superClassEntry = globalSymTable.get(n.superId);
             n.superEntry = superClassEntry;
-            ClassTypeNode superClassType = (ClassTypeNode) superClassEntry.type;
-            fieldTypeList.addAll(superClassType.fields);
-            methodTypeList.addAll(superClassType.methods);
+            ClassTypeNode classType = (ClassTypeNode) superClassEntry.type;
+            fieldTypeList.addAll(classType.fields);
+            methodTypeList.addAll(classType.methods);
         }
 
         STentry entry = new STentry(0, new ClassTypeNode(fieldTypeList, methodTypeList), decOffset--);
         n.setType(entry.type);
 
-        // If the name of the current class has already been declared, return an "already declared" error
-        if (globalSymbolTable.put(n.id, entry) != null) {
+        if (globalSymTable.put(n.id, entry) != null) {
             System.out.println("Class id " + n.id + " at line "+ n.getLine() +" already declared");
             stErrors++;
         }
 
-        // Handle virtual table. Create a new empty virtual table. If the class extends a superclass, add
-        // all the content of that superclass to the table. Then add the new virtual table to the global symbol table
-        // and to the global classTable
+        // virtual table management
         nestingLevel++;
         Map<String, STentry> virtualTable = new HashMap<>();
         if (n.superId != null) {
@@ -272,20 +270,18 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
         symTable.add(virtualTable);
         classTable.put(n.id, virtualTable);
 
-        // Handle fields
+        // fields management
         virtualTable = symTable.get(nestingLevel);
         int fieldOffset = -fieldTypeList.size() - 1;
 
         for (FieldNode field : n.fields) {
             if (print) printNode(field);
-
             if (fieldsAndMethods.contains(field.id)) {
                 System.out.println("Field or Method " + field.id + " at line " + field.getLine() + " already declared ");
                 stErrors++;
             } else {
                 STentry superEntry = virtualTable.get(field.id);
                 STentry fieldEntry;
-
                 if (superEntry == null) {
                     // New field - create new entry
                     fieldEntry = new STentry(nestingLevel, field.getType(), fieldOffset--);
@@ -299,7 +295,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
                         stErrors++;
                     } else {
                         // Override existing field - REPLACE instead of ADD
-                        fieldEntry = new STentry(nestingLevel, field.getType(), superEntry.offset);
+                        fieldEntry =  new STentry(nestingLevel, field.getType(), superEntry.offset);
                         fieldsAndMethods.add(field.id);
                         field.offset = fieldEntry.offset;
                         virtualTable.put(field.id, fieldEntry);
@@ -444,4 +440,5 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
         if (print) printNode(n);
         return null;
     }
+
 }

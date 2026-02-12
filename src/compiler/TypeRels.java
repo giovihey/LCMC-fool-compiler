@@ -46,7 +46,7 @@ public class TypeRels {
 	}
 
 	// for ifNode
-	public static TypeNode lowestCommonAncestor(TypeNode a, TypeNode b) {
+	public static TypeNode lowestCommonAncestor(TypeNode a, TypeNode b) { // Optimization 3: Type Checking LCA
 		// bool/int Nodes management
 		if ((a instanceof BoolTypeNode) && (b instanceof IntTypeNode)
 				|| (a instanceof IntTypeNode) && (b instanceof BoolTypeNode)

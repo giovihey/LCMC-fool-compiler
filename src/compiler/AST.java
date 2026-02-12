@@ -266,7 +266,7 @@ public class AST {
 
     public static class FieldNode extends DecNode {
         final String id;
-        int offset;
+        int offset; // Optimization 2
 
         public FieldNode(String id, TypeNode type) {
             this.id = id;

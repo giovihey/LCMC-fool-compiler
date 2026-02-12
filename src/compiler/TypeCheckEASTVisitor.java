@@ -82,9 +82,8 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
             throw new TypeException("Non boolean condition in if", n.getLine());
         TypeNode t = visit(n.th);
         TypeNode e = visit(n.el);
-        if (isSubtype(t, e)) return e;
-        if (isSubtype(e, t)) return t;
-        throw new TypeException("Incompatible types in then-else branches", n.getLine());
+        if (lowestCommonAncestor(t, e) != null) return lowestCommonAncestor(t,e);
+        else throw new TypeException("Incompatible types in then-else branches", n.getLine());
     }
 
     @Override
@@ -255,7 +254,6 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
     public TypeNode visitNode(ClassNode n) throws TypeException {
         if (print) printNode(n);
 
-//        TODO: Extension
         if (n.superId != null) {
             addClassTypeReference(n.id, n.superId);
         }
@@ -264,13 +262,12 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
             visit(m);
         }
 
-        // TODO: Extension
         if (n.superEntry != null) {
             ClassTypeNode classTypeNode = (ClassTypeNode) n.getType();
             ClassTypeNode superClassTypeNode = (ClassTypeNode) n.superEntry.type;
             // typechecking optimization
             for (FieldNode field : n.fields) {
-                int fieldPos = -field.offset - 1;
+                int fieldPos = -field.offset - 1; // Optimization 2: Type Checking ClassNode
                 if (fieldPos < superClassTypeNode.fields.size() && !isSubtype(classTypeNode.fields.get(fieldPos), superClassTypeNode.fields.get(fieldPos))) {
                     throw new TypeException("field is not subtype in line: ", n.getLine());
                 }
