@@ -264,25 +264,26 @@ public class AST {
         public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
     }
 
-    public static class FieldNode extends DecNode {
-        final String id;
+    public static class FieldNode extends ParNode {
+//        final String id;
         int offset; // Optimization 2
 
         public FieldNode(String id, TypeNode type) {
-            this.id = id;
-            this.type = type;
+            super(id, type);
+//            this.id = id;
+//            this.type = type;
         }
 
         @Override
         public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
     }
 
-    public static class MethodNode extends DecNode {
-        final String id;
-        final TypeNode returnType;
-        final List<ParNode> parameterList;
-        final List<DecNode> declarationList;
-        final Node exp;
+    public static class MethodNode extends FunNode {
+//        final String id;
+//        final TypeNode returnType;
+//        final List<ParNode> parameterList;
+//        final List<DecNode> declarationList;
+//        final Node exp;
         String label;
         int offset;
 
@@ -291,11 +292,12 @@ public class AST {
         }
 
         public MethodNode(String id, TypeNode returnType, List<ParNode> parameterList, List<DecNode> declarationList, Node exp) {
-            this.id = id;
-            this.returnType = returnType;
-            this.parameterList = parameterList;
-            this.declarationList = declarationList;
-            this.exp = exp;
+//            this.id = id;
+//            this.returnType = returnType;
+//            this.parameterList = parameterList;
+//            this.declarationList = declarationList;
+//            this.exp = exp;
+            super(id, returnType, parameterList, declarationList, exp);
         }
 
         @Override
@@ -342,12 +344,12 @@ public class AST {
 	// types
 
 	public static class ClassTypeNode extends TypeNode {
-		final List<TypeNode> fields;
-		final List<ArrowTypeNode> methods;
+		final List<TypeNode> allFields;
+		final List<ArrowTypeNode> allMethods;
 
-		public ClassTypeNode(List<TypeNode> fields, List<ArrowTypeNode> methods) {
-			this.fields = fields;
-			this.methods = methods;
+		public ClassTypeNode(List<TypeNode> allFields, List<ArrowTypeNode> allMethods) {
+			this.allFields = allFields;
+			this.allMethods = allMethods;
 		}
 
 		@Override

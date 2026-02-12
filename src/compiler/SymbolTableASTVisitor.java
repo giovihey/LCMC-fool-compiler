@@ -1,6 +1,5 @@
 package compiler;
 
-import java.lang.reflect.Field;
 import java.util.*;
 import compiler.AST.*;
 import compiler.exc.*;
@@ -249,8 +248,8 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
             STentry superClassEntry = globalSymTable.get(n.superId);
             n.superEntry = superClassEntry;
             ClassTypeNode classType = (ClassTypeNode) superClassEntry.type;
-            fieldTypeList.addAll(classType.fields);
-            methodTypeList.addAll(classType.methods);
+            fieldTypeList.addAll(classType.allFields);
+            methodTypeList.addAll(classType.allMethods);
         }
 
         STentry entry = new STentry(0, new ClassTypeNode(fieldTypeList, methodTypeList), decOffset--);
@@ -331,7 +330,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
         if (print) printNode(n);
         Map<String, STentry> virtualTable = symTable.get(nestingLevel);
         List<TypeNode> parameterTypeList = new ArrayList<>();
-        for (ParNode par : n.parameterList) {
+        for (ParNode par : n.parlist) {
             parameterTypeList.add(par.getType());
         }
 
@@ -341,7 +340,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 
         if (superEntry == null) {
             // Nuovo metodo
-            methodEntry = new STentry(nestingLevel, new ArrowTypeNode(parameterTypeList, n.returnType), decOffset++);
+            methodEntry = new STentry(nestingLevel, new ArrowTypeNode(parameterTypeList, n.retType), decOffset++);
         } else {
             if (!(superEntry.type instanceof ArrowTypeNode)) {
                 System.out.println("Cannot override field " + n.id + " at line " + n.getLine() + " with method " + n.id);
@@ -365,13 +364,13 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
         decOffset = -2;
 
         int parametersOffset = 1;
-        for (ParNode param : n.parameterList) {
+        for (ParNode param : n.parlist) {
             if (methodScope.put(param.id, new STentry(nestingLevel, param.getType(), parametersOffset++)) != null) {
                 System.out.println("Parameter: " + param.id + " at line " + n.getLine() + " was already declared");
                 stErrors++;
             }
         }
-        for (Node dec : n.declarationList) {
+        for (Node dec : n.declist) {
             visit(dec);
         }
         visit(n.exp);

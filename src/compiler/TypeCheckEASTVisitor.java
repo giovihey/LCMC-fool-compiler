@@ -268,12 +268,12 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
             // typechecking optimization
             for (FieldNode field : n.fields) {
                 int fieldPos = -field.offset - 1; // Optimization 2: Type Checking ClassNode
-                if (fieldPos < superClassTypeNode.fields.size() && !isSubtype(classTypeNode.fields.get(fieldPos), superClassTypeNode.fields.get(fieldPos))) {
+                if (fieldPos < superClassTypeNode.allFields.size() && !isSubtype(classTypeNode.allFields.get(fieldPos), superClassTypeNode.allFields.get(fieldPos))) {
                     throw new TypeException("field is not subtype in line: ", n.getLine());
                 }
             }
             for (MethodNode method : n.methods) {
-                if (method.offset < superClassTypeNode.methods.size() && !isSubtype(classTypeNode.methods.get(method.offset), superClassTypeNode.methods.get(method.offset))) {
+                if (method.offset < superClassTypeNode.allMethods.size() && !isSubtype(classTypeNode.allMethods.get(method.offset), superClassTypeNode.allMethods.get(method.offset))) {
                     throw new TypeException("method is not subtype in line: ", n.getLine());
                 }
             }
@@ -284,14 +284,14 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
     @Override
     public TypeNode visitNode(MethodNode n) throws TypeException {
         if (print) printNode(n,n.id);
-        for (Node dec : n.declarationList)
+        for (Node dec : n.declist)
             try {
                 visit(dec);
             } catch (IncomplException e) {
             } catch (TypeException e) {
                 System.out.println("Type checking error in a declaration: " + e.text);
             }
-        if ( !isSubtype(visit(n.exp),ckvisit(n.returnType)) )
+        if ( !isSubtype(visit(n.exp),ckvisit(n.retType)) )
             throw new TypeException("Wrong return type for method " + n.id, n.getLine());
         return null;
     }
@@ -319,15 +319,15 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
         ClassTypeNode classType = (ClassTypeNode) n.entry.type;
 
         // Controlla se il numero di argomenti corrisponde al numero di fields
-        if (classType.fields.size() != n.argList.size()) {
+        if (classType.allFields.size() != n.argList.size()) {
             throw new TypeException("Wrong number of arguments for class " + n.classId +
-                    " (expected " + classType.fields.size() + ", got " + n.argList.size() + ")",
+                    " (expected " + classType.allFields.size() + ", got " + n.argList.size() + ")",
                     n.getLine());
         }
 
         // Type check di ogni argomento
         for (int i = 0; i < n.argList.size(); i++) {
-            TypeNode fieldType = classType.fields.get(i);
+            TypeNode fieldType = classType.allFields.get(i);
             TypeNode passedField = visit(n.argList.get(i));
             if (!isSubtype(passedField, fieldType)) {
                 throw new TypeException("Wrong field type in class " + n.classId + " at line: ", n.getLine());

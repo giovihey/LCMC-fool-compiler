@@ -348,13 +348,13 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
     public String visitNode(MethodNode n) {
         if (print) printNode(n, n.id);
         String declCode = null, popDecl = null, popParl = null;
-        for (Node dec : n.declarationList) {
+        for (Node dec : n.declist) {
             declCode = nlJoin(declCode, visit(dec));
             popDecl = nlJoin(popDecl, "pop");
         }
 
         // remove parameters from stack
-        for (int i = 0; i < n.parameterList.size(); i++) {
+        for (int i = 0; i < n.parlist.size(); i++) {
             popParl = nlJoin(popParl, "pop");
         }
 
